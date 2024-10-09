@@ -108,6 +108,8 @@ class AntColony:
         best_route: 迭代中发现的最佳路径
         """
         self.pheromone *= self.decay  # 信息素衰减
+
+        # 先更新所有路径的信息素
         for route, _ in all_routes:
             if route is None or len(route) < 2:
                 continue  # 跳过无效路径
@@ -122,6 +124,19 @@ class AntColony:
 
                 # 更新信息素，距离越短的路径贡献的越多
                 self.pheromone[node_i][node_next] += 1.0 / self._route_distance(route)
+
+        # 针对最优路径进行信息素增强
+        if best_route is not None and len(best_route) >= 2:
+            for i in range(len(best_route) - 1):
+                node_i = best_route[i]
+                node_next = best_route[i + 1]
+
+                if node_i < 0 or node_i >= len(self.pheromone) or node_next < 0 or node_next >= len(self.pheromone):
+                    print(f"警告: 最优路径索引无效，跳过 ({node_i}, {node_next})")
+                    continue
+
+                # 强化最优路径的信息素，通常比普通路径更新更多信息素
+                self.pheromone[node_i][node_next] += 5.0 / self._route_distance(best_route)  # 加强信息素权重
 
     def run(self, start_node, end_node, excluded_nodes):
         """
@@ -223,7 +238,7 @@ if __name__ == "__main__":
     excluded_nodes = [6, 9, 10]  # 排除的节点
 
     # 运行蚁群算法
-    ant_colony = AntColony(matrix, n_ants, n_iterations, decay, alpha=1, beta=2)
+    ant_colony = AntColony(matrix, n_ants, n_iterations, decay, alpha=1, beta=1)
     best_route = ant_colony.run(start_node, end_node, excluded_nodes)
 
     # 绘制路径
